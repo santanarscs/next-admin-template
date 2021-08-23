@@ -7,6 +7,8 @@ import firebaseConfig from '../../firebase/config'
 interface AuthContextProps {
   user: User
   isLoading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string) => Promise<void>
   loginGoogle: () => Promise<void>
   logout: () => void
 }
@@ -56,13 +58,39 @@ function AuthProvider({children}) {
     }
   }
 
+  async function login(email: string, password: string) {
+    try {
+      setIsLoading(true)
+      const response = await firebaseConfig.auth().signInWithEmailAndPassword(email, password)
+      await configureSection(response.user)
+      router.push('/')
+
+    } finally {
+      setIsLoading(false)
+    }
+    
+  }
+
+  async function register(email: string, password: string) {
+    try {
+      setIsLoading(true)
+      const response = await firebaseConfig.auth().createUserWithEmailAndPassword(email, password)
+      await configureSection(response.user)
+      router.push('/')
+
+    } finally {
+      setIsLoading(false)
+    }
+    
+  }
+
   async function loginGoogle() {
     try {
       setIsLoading(true)
       const response = await firebaseConfig.auth().signInWithPopup(
         new firebaseConfig.auth.GoogleAuthProvider()
       )
-      configureSection(response.user)
+      await configureSection(response.user)
       router.push('/')
 
     } finally {
@@ -90,7 +118,7 @@ function AuthProvider({children}) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{user, isLoading, loginGoogle, logout}}>
+    <AuthContext.Provider value={{user, isLoading, login, register, loginGoogle, logout}}>
       {children}
     </AuthContext.Provider>
   )
